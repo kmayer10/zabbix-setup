@@ -29,18 +29,18 @@
   tags: 
     - database
   when: inventory_hostname in groups['database']
-- name: Verify local user can sudo to postgres
-  become_user: postgres
-  command: whoami
-  tags: 
-    - database
-  when: inventory_hostname in groups['database']
 - name: Install ACL extension
   package:
     name: acl
     state: present
   tags: 
     - database
+- name: Verify local user can sudo to postgres
+  become_user: postgres
+  command: whoami
+  tags: 
+    - database
+  when: inventory_hostname in groups['database']
   when: inventory_hostname in groups['database']
 - name: Create Zabbix Database User
   become_user: postgres
