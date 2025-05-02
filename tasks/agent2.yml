@@ -1,0 +1,30 @@
+- name: Install Zabbix Agent2
+  package:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - zabbix-agent2
+  tags:
+    - agent2
+  when: inventory_hostname in groups['database']
+
+- name: Install Zabbix Agent2 Plugins
+  package:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - zabbix-agent2-plugin-mongodb
+    - zabbix-agent2-plugin-postgresql
+  tags:
+    - agent2
+  when: inventory_hostname in groups['database']
+  
+- name: Start & Enable Zabbix Agent2
+  service:
+    name: zabbix-agent2
+    state: started
+    enabled: true
+  tags:
+    - agent2
+  when: inventory_hostname in groups['database']
+  

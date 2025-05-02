@@ -1,0 +1,19 @@
+# agent
+- name: Install Zabbix Agent
+  package:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - zabbix-agent
+  tags:
+    - agent
+  when: inventory_hostname in groups['agent'] or inventory_hostname in groups['server']
+
+- name: Start & Enable Zabbix Agent1
+  service:
+    name: zabbix-agent
+    state: started
+    enabled: true
+  tags:
+    - agent
+  when: inventory_hostname in groups['agent'] or inventory_hostname in groups['server']

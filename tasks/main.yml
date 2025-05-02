@@ -1,0 +1,15 @@
+---
+# tasks file for zabbix
+- name: Include Zabbix Repository
+  import_tasks: add_repository.yml
+  tags:
+    - database
+    - server
+    - agent
+    - agent2
+- name: Include Zabbix Server Tasks
+  import_tasks: server.yml
+- name: Include Zabbix Agent Tasks
+  import_tasks: agent.yml
+- name: Include Zabbix Agent2 Tasks
+  import_tasks: agent2.yml

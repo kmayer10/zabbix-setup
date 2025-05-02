@@ -1,0 +1,110 @@
+- name: Install PostgreSQL & Dependencies
+  package:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - postgresql
+    - postgresql-contrib
+    - python3-psycopg2
+    - zabbix-sql-scripts
+  tags: 
+    - database
+  when: inventory_hostname in groups['database']
+    
+- name: Start & Enable PostgreSQL
+  service:
+    name: postgresql
+    state: started
+    enabled: true
+  tags: 
+    - database
+  when: inventory_hostname in groups['database']
+- name: Ensure sudoers entry for local user to become postgres
+  copy:
+    dest: "/etc/sudoers.d/{{ local_user }}-postgres"
+    content: "{{ local_user }} ALL=(postgres) NOPASSWD: ALL\n"
+    owner: root
+    group: root
+    mode: '0440'
+  tags: 
+    - database
+  when: inventory_hostname in groups['database']
+- name: Verify local user can sudo to postgres
+  become_user: postgres
+  command: whoami
+  tags: 
+    - database
+  when: inventory_hostname in groups['database']
+- name: Install ACL extension
+  package:
+    name: acl
+    state: present
+  tags: 
+    - database
+  when: inventory_hostname in groups['database']
+- name: Create Zabbix Database User
+  become_user: postgres
+  postgresql_user:
+    name: zabbix
+    password: "{{ zabbix_db_password }}"
+    role_attr_flags: LOGIN
+    encrypted: yes
+    state: present
+  tags:
+    - database
+    - db
+  when: inventory_hostname in groups['database']
+  environment:
+    ANSIBLE_REMOTE_TEMP: /tmp
+- name: Create Zabbix Database
+  become_user: postgres
+  postgresql_db:
+    name: zabbix
+    owner: zabbix
+    encoding: UTF8
+    template: template0
+    state: present
+  tags:
+    - database
+    - db
+  when: inventory_hostname in groups['database']
+  environment:
+    ANSIBLE_REMOTE_TEMP: /tmp
+- name: Install Zabbix Server Components
+  package:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - zabbix-server-pgsql
+    - zabbix-frontend-php
+    - php8.1-pgsql
+    - zabbix-apache-conf
+    - zabbix-sql-scripts
+  tags:
+    - server
+  when: inventory_hostname in groups['server']
+- name: Start & Enable Zabbix Server
+  service:
+    name: zabbix-server
+    state: started
+    enabled: true
+  tags: 
+    - server
+  when: inventory_hostname in groups['server']
+- name: Extraxt Zabbix SQL Scripts
+  shell: zcat /usr/share/zabbix/sql-scripts/postgresql/server.sql.gz > /tmp/server.sql
+  tags: 
+    - database
+  when: inventory_hostname in groups['database']
+- name: Import Zabbix SQL Scripts
+  shell: psql -U zabbix -d zabbix -f /tmp/server.sql
+  environment:
+    PGPASSWORD: "{{ zabbix_db_password }}"
+  register: import_result
+  tags: 
+    - database
+  when: inventory_hostname in groups['database']
+
+    
+
+    
